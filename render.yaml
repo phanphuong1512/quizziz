@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: quizziz
+    runtime: node
+    plan: free
+    buildCommand: pnpm install && pnpm build
+    startCommand: node server/index.js
+    envVars:
+      - key: NODE_VERSION
+        value: 22.17.0

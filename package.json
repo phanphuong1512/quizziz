@@ -8,7 +8,9 @@
     "dev:server": "node --watch server/index.js",
     "dev:client": "pnpm --dir client dev",
     "dev": "concurrently -n \"SERVER,CLIENT\" -c \"cyan,magenta\" \"node --watch server/index.js\" \"pnpm --dir client dev\"",
-    "build": "pnpm --dir client build",
+    "build": "pnpm --dir client install && pnpm --dir client build",
+    "render-build": "pnpm install && pnpm --dir client install && pnpm --dir client build",
+    "postinstall": "pnpm --dir client install && pnpm --dir client build",
     "start": "node server/index.js"
   },
   "keywords": [

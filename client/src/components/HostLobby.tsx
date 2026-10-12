@@ -30,12 +30,23 @@ export const HostLobby: React.FC<HostLobbyProps> = ({
   const [isQrZoomed, setIsQrZoomed] = useState(false);
   const [networkUrl, setNetworkUrl] = useState<string>('');
 
-  // Fetch local network IP so phone QR scanning works immediately on local Wi-Fi
+  // Detect public domain vs local IP for QR code generation
   useEffect(() => {
+    const isLocalhost = 
+      window.location.hostname === 'localhost' || 
+      window.location.hostname === '127.0.0.1';
+
+    if (!isLocalhost) {
+      // Deployed on public internet (e.g. Render, Vercel) -> Use public HTTPS origin
+      setNetworkUrl(window.location.origin);
+      return;
+    }
+
+    // Local development -> Use local Wi-Fi IP for phone camera QR scanning
     fetch('/api/network-ip')
       .then((res) => res.json())
       .then((data) => {
-        if (data && data.localIp) {
+        if (data && data.localIp && data.localIp !== 'localhost') {
           const clientPort = window.location.port ? `:${window.location.port}` : '';
           setNetworkUrl(`http://${data.localIp}${clientPort}`);
         } else {

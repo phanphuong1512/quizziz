@@ -643,13 +643,26 @@ io.on('connection', (socket) => {
 
 // Serve built client in production if available
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
+console.log(`Checking client static files at: ${clientDist}`);
 if (fs.existsSync(clientDist)) {
+  console.log('✅ Client dist found! Serving frontend.');
   app.use(express.static(clientDist));
   app.use((req, res, next) => {
     if (req.method === 'GET' && !req.path.startsWith('/api') && !req.path.startsWith('/socket.io')) {
       return res.sendFile(path.join(clientDist, 'index.html'));
     }
     next();
+  });
+} else {
+  console.warn(`⚠️ Warning: client dist folder not found at ${clientDist}!`);
+  app.get('/', (req, res) => {
+    res.status(503).send(`
+      <div style="font-family: sans-serif; text-align: center; padding: 50px; background: #0d0620; color: white; min-height: 100vh;">
+        <h1>⚡ Quizizz Server đang chạy!</h1>
+        <p>Tuy nhiên thư mục <code>client/dist</code> chưa được build trên server.</p>
+        <p>Vui lòng cập nhật <b>Build Command</b> trên Render thành: <code style="background: #2a1550; padding: 5px 10px; border-radius: 5px;">pnpm install && pnpm build</code></p>
+      </div>
+    `);
   });
 }
 
