@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-dark: #0d0620;
+    --card-dark: #1b1138;
+    --border-dark: #37236d;
+  }
+
+  body {
+    background-color: #0d0620;
+    color: #ffffff;
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom Quizizz 3D pushable button effects */
+.quizizz-btn-3d {
+  transition: all 0.08s ease-in-out;
+  position: relative;
+  user-select: none;
+}
+
+.quizizz-btn-3d:active {
+  transform: translateY(4px);
+  box-shadow: none !important;
+}
+
+/* Animated gradient background */
+.quiz-bg-pattern {
+  background-color: #0c0721;
+  background-image: 
+    radial-gradient(circle at 15% 20%, rgba(136, 84, 192, 0.25) 0%, transparent 40%),
+    radial-gradient(circle at 85% 80%, rgba(99, 102, 241, 0.2) 0%, transparent 40%),
+    radial-gradient(circle at 50% 50%, rgba(168, 85, 247, 0.1) 0%, transparent 60%);
+  background-attachment: fixed;
+}
+
+/* Pulse glow animation */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(136, 84, 192, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(168, 85, 247, 0.8);
+  }
+}
+
+.pulse-glow {
+  animation: pulseGlow 2.5s infinite;
+}
+
+/* Countdown bar animation */
+@keyframes shrinkTimer {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* Float animation for avatars */
+@keyframes floatBob {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(2deg);
+  }
+}
+
+.float-avatar {
+  animation: floatBob 3s ease-in-out infinite;
+}

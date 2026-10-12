@@ -1,0 +1,160 @@
+[
+  {
+    "id": "quiz-khoa-hoc-vu-tru",
+    "title": "Vũ trụ & Khoa học kỳ thú 🚀",
+    "description": "Thử thách kiến thức về các hành tinh, vũ trụ bao la và những hiện tượng khoa học hấp dẫn!",
+    "category": "Khoa học",
+    "bannerColor": "from-indigo-600 to-purple-800",
+    "icon": "🚀",
+    "questions": [
+      {
+        "id": "q1",
+        "question": "Hành tinh nào gần Mặt Trời nhất trong Hệ Mặt Trời?",
+        "options": ["Sao Kim (Venus)", "Sao Thủy (Mercury)", "Sao Hỏa (Mars)", "Trái Đất (Earth)"],
+        "correctIndex": 1,
+        "timeLimit": 20,
+        "explanation": "Sao Thủy (Mercury) là hành tinh gần Mặt Trời nhất và cũng là hành tinh nhỏ nhất trong Hệ Mặt Trời."
+      },
+      {
+        "id": "q2",
+        "question": "Âm thanh có thể truyền qua môi trường chân không ngoài không gian không?",
+        "options": ["Có, nhưng rất nhỏ", "Không thể truyền được", "Có, truyền rất nhanh", "Chỉ truyền được khi gần ngôi sao"],
+        "correctIndex": 1,
+        "timeLimit": 20,
+        "explanation": "Âm thanh cần môi trường vật chất (chất rắn, lỏng, khí) để lan truyền, do đó không thể truyền qua chân không."
+      },
+      {
+        "id": "q3",
+        "question": "Hành tinh nào được mệnh danh là 'Hành tinh Đỏ'?",
+        "options": ["Sao Hỏa (Mars)", "Sao Mộc (Jupiter)", "Sao Thổ (Saturn)", "Sao Kim (Venus)"],
+        "correctIndex": 0,
+        "timeLimit": 20,
+        "explanation": "Sao Hỏa có màu đỏ do bề mặt chứa nhiều oxit sắt (rỉ sét)."
+      },
+      {
+        "id": "q4",
+        "question": "Khí nào chiếm tỉ lệ lớn nhất trong bầu khí quyển của Trái Đất?",
+        "options": ["Khí Oxy (O2)", "Khí Carbon dioxide (CO2)", "Khí Nitơ (N2)", "Khí Hydro (H2)"],
+        "correctIndex": 2,
+        "timeLimit": 20,
+        "explanation": "Khí Nitơ chiếm khoảng 78% bầu khí quyển Trái Đất, trong khi Oxy chiếm khoảng 21%."
+      },
+      {
+        "id": "q5",
+        "question": "Ánh sáng từ Mặt Trời mất khoảng bao lâu để tới Trái Đất?",
+        "options": ["8 giây", "8 phút 20 giây", "1 giờ", "Tức thì (0 giây)"],
+        "correctIndex": 1,
+        "timeLimit": 20,
+        "explanation": "Khoảng cách từ Mặt Trời đến Trái Đất khoảng 150 triệu km, ánh sáng truyền với tốc độ 300.000 km/s mất khoảng 8 phút 20 giây."
+      },
+      {
+        "id": "q6",
+        "question": "Hành tinh nào lớn nhất trong Hệ Mặt Trời?",
+        "options": ["Sao Thổ", "Sao Mộc (Jupiter)", "Sao Hải Vương", "Sao Thiên Vương"],
+        "correctIndex": 1,
+        "timeLimit": 20,
+        "explanation": "Sao Mộc là hành tinh lớn nhất, có khối lượng gấp 2.5 lần tất cả các hành tinh khác cộng lại."
+      }
+    ]
+  },
+  {
+    "id": "quiz-toan-iq-vui",
+    "title": "Toán học & Câu đố IQ hại não 🧠",
+    "description": "Các câu hỏi tư duy logic, đố mẹo toán học vui nhộn kích thích tư duy sắc bén!",
+    "category": "Toán học & IQ",
+    "bannerColor": "from-emerald-600 to-teal-800",
+    "icon": "🧠",
+    "questions": [
+      {
+        "id": "q1",
+        "question": "Có bao nhiêu chữ số 9 trong dãy số từ 1 đến 100?",
+        "options": ["10 chữ số", "11 chữ số", "19 chữ số", "20 chữ số"],
+        "correctIndex": 3,
+        "timeLimit": 25,
+        "explanation": "Các số ở hàng đơn vị: 9, 19, 29, 39, 49, 59, 69, 79, 89, 99 (10 số). Hàng chục: 90, 91, 92, 93, 94, 95, 96, 97, 98, 99 (10 số). Tổng cộng là 20 chữ số 9."
+      },
+      {
+        "id": "q2",
+        "question": "Một con ốc sên trèo lên cây cao 10m. Ban ngày trèo lên 3m, ban đêm tụt xuống 2m. Sau bao nhiêu ngày ốc sên lên tới đỉnh?",
+        "options": ["10 ngày", "8 ngày", "7 ngày", "9 ngày"],
+        "correctIndex": 1,
+        "timeLimit": 25,
+        "explanation": "Mỗi ngày tiến 1m. Đến cuối ngày thứ 7, nó ở độ cao 7m. Sang ngày thứ 8, nó leo thêm 3m là đạt 10m tới đỉnh luôn mà không bị tụt lại!"
+      },
+      {
+        "id": "q3",
+        "question": "Số tiếp theo trong dãy quy luật: 2, 4, 8, 16, 32, ... là số nào?",
+        "options": ["48", "64", "56", "72"],
+        "correctIndex": 1,
+        "timeLimit": 15,
+        "explanation": "Mỗi số gấp đôi số liền trước nó (nhân với 2). 32 x 2 = 64."
+      },
+      {
+        "id": "q4",
+        "question": "Nếu 3 con mèo bắt được 3 con chuột trong 3 phút, thì cần bao nhiêu con mèo để bắt 100 con chuột trong 100 phút?",
+        "options": ["100 con mèo", "3 con mèo", "33 con mèo", "1 con mèo"],
+        "correctIndex": 1,
+        "timeLimit": 25,
+        "explanation": "3 con mèo bắt được 1 con chuột trong 1 phút (hay nói cách khác, 3 con mèo bắt được 100 con chuột trong 100 phút). Vậy vẫn chỉ cần 3 con mèo!"
+      },
+      {
+        "id": "q5",
+        "question": "Tổng của các số tự nhiên từ 1 đến 10 bằng bao nhiêu?",
+        "options": ["45", "50", "55", "60"],
+        "correctIndex": 2,
+        "timeLimit": 20,
+        "explanation": "Công thức: (1 + 10) x 10 / 2 = 55."
+      }
+    ]
+  },
+  {
+    "id": "quiz-dia-ly-viet-nam",
+    "title": "Địa lý & Danh lam thắng cảnh Việt Nam 🇻🇳",
+    "description": "Khám phá non sông gấm vóc, danh thắng và vẻ đẹp đất nước Việt Nam thân yêu!",
+    "category": "Địa lý",
+    "bannerColor": "from-amber-600 to-rose-700",
+    "icon": "🇻🇳",
+    "questions": [
+      {
+        "id": "q1",
+        "question": "Đỉnh núi nào được mệnh danh là 'Nóc nhà Đông Dương'?",
+        "options": ["Đỉnh Fansipan", "Đỉnh Bạch Mộc Lương Tử", "Đỉnh Tây Côn Lĩnh", "Đỉnh Langbiang"],
+        "correctIndex": 0,
+        "timeLimit": 20,
+        "explanation": "Đỉnh Fansipan (Lào Cai) cao 3.143m là đỉnh núi cao nhất Việt Nam và toàn bán đảo Đông Dương."
+      },
+      {
+        "id": "q2",
+        "question": "Vịnh biển nào của Việt Nam được UNESCO hai lần công nhận là Di sản thiên nhiên thế giới?",
+        "options": ["Vịnh Nha Trang", "Vịnh Hạ Long", "Vịnh Lăng Cô", "Vịnh Cam Ranh"],
+        "correctIndex": 1,
+        "timeLimit": 20,
+        "explanation": "Vịnh Hạ Long (Quảng Ninh) được UNESCO công nhận di sản thế giới vào năm 1994 và năm 2000."
+      },
+      {
+        "id": "q3",
+        "question": "Thành phố nào là thành phố trực thuộc trung ương lớn nhất Việt Nam về dân số?",
+        "options": ["Hà Nội", "Đà Nẵng", "TP. Hồ Chí Minh", "Hải Phòng"],
+        "correctIndex": 2,
+        "timeLimit": 20,
+        "explanation": "Thành phố Hồ Chí Minh là đô thị đông dân nhất và là trung tâm kinh tế lớn nhất cả nước."
+      },
+      {
+        "id": "q4",
+        "question": "Hang động tự nhiên lớn nhất thế giới nằm ở tỉnh nào của Việt Nam?",
+        "options": ["Hà Giang", "Quảng Bình (Hang Sơn Đoòng)", "Cao Bằng", "Ninh Bình"],
+        "correctIndex": 1,
+        "timeLimit": 20,
+        "explanation": "Hang Sơn Đoòng thuộc Vườn quốc gia Phong Nha - Kẻ Bàng, tỉnh Quảng Bình là hang động tự nhiên lớn nhất thế giới."
+      },
+      {
+        "id": "q5",
+        "question": "Việt Nam có đường bờ biển dài khoảng bao nhiêu km?",
+        "options": ["Khoảng 2.500 km", "Khoảng 3.260 km", "Khoảng 4.100 km", "Khoảng 5.000 km"],
+        "correctIndex": 1,
+        "timeLimit": 20,
+        "explanation": "Bờ biển Việt Nam dài 3.260 km trải dài từ Móng Cái (Quảng Ninh) đến Hà Tiên (Kiên Giang)."
+      }
+    ]
+  }
+]
