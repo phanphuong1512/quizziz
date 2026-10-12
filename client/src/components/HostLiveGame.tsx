@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Trophy, Flame, CheckCircle, Clock, StopCircle, Award } from 'lucide-react';
+import { ArrowRight, Trophy, Flame, CheckCircle, Clock, StopCircle, Award, FastForward } from 'lucide-react';
 import type { LeaderboardEntry } from '../types';
 import { sounds } from '../utils/sound';
 
@@ -15,6 +15,7 @@ interface HostLiveGameProps {
   leaderboard: LeaderboardEntry[];
   answeredCount: number;
   totalPlayers: number;
+  isRevealed?: boolean;
   onNextQuestion: () => void;
   onEndGame: () => void;
 }
@@ -31,6 +32,7 @@ export const HostLiveGame: React.FC<HostLiveGameProps> = ({
   leaderboard,
   answeredCount,
   totalPlayers,
+  isRevealed = false,
   onNextQuestion,
   onEndGame,
 }) => {
@@ -66,7 +68,17 @@ export const HostLiveGame: React.FC<HostLiveGameProps> = ({
   const answeredPercent = totalPlayers > 0 ? (answeredCount / totalPlayers) * 100 : 0;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 min-h-[calc(100vh-70px)] flex flex-col justify-between">
+    <div className="max-w-7xl mx-auto px-4 pt-6 pb-6 min-h-[calc(100vh-70px)] flex flex-col justify-between relative">
+      {/* FULL-WIDTH FIXED HORIZONTAL COUNTDOWN BAR AT TOP */}
+      <div className="fixed top-0 left-0 right-0 h-2 sm:h-2.5 bg-[#170e33] z-50 overflow-hidden shadow-md">
+        <div
+          className={`h-full transition-all duration-300 ${
+            timerPercent > 45 ? 'bg-emerald-400' : timerPercent > 20 ? 'bg-amber-400' : 'bg-rose-500'
+          }`}
+          style={{ width: `${timerPercent}%` }}
+        />
+      </div>
+
       {/* Top Header */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-[#2d1b54]">
         <div className="flex items-center gap-3">
@@ -74,6 +86,11 @@ export const HostLiveGame: React.FC<HostLiveGameProps> = ({
             CÂU {questionIndex + 1} / {totalQuestions}
           </span>
           <span className="text-xs text-purple-400 font-mono">PHÒNG: {pin}</span>
+          {isRevealed && (
+            <span className="px-3 py-1 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold animate-pulse">
+              ⏳ Tự động chuyển câu sau 4s...
+            </span>
+          )}
         </div>
 
         {/* Action Controls */}
@@ -90,8 +107,19 @@ export const HostLiveGame: React.FC<HostLiveGameProps> = ({
             onClick={handleNext}
             className="quizizz-btn-3d flex items-center gap-2 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-extrabold text-xs shadow-md border-b-4 border-purple-800"
           >
-            {questionIndex + 1 >= totalQuestions ? 'Xem kết quả chung cuộc' : 'Câu hỏi tiếp theo'}
-            <ArrowRight className="w-4 h-4" />
+            {isRevealed ? (
+              <>
+                <FastForward className="w-4 h-4" />
+                Chuyển câu ngay
+              </>
+            ) : questionIndex + 1 >= totalQuestions ? (
+              'Xem kết quả chung cuộc'
+            ) : (
+              <>
+                Câu tiếp theo
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -102,17 +130,7 @@ export const HostLiveGame: React.FC<HostLiveGameProps> = ({
         <div className="lg:col-span-7 space-y-6">
           {/* Question Box */}
           <div className="p-7 rounded-3xl bg-[#170e33] border-2 border-[#381f6e] shadow-xl relative overflow-hidden">
-            {/* Time progress bar */}
-            <div className="absolute top-0 left-0 right-0 h-1.5 bg-[#0e0722]">
-              <div
-                className={`h-full transition-all duration-1000 ${
-                  timerPercent > 40 ? 'bg-emerald-400' : timerPercent > 20 ? 'bg-amber-400' : 'bg-red-500'
-                }`}
-                style={{ width: `${timerPercent}%` }}
-              />
-            </div>
-
-            <div className="flex items-center justify-between text-xs font-bold text-purple-300 mb-3 pt-2">
+            <div className="flex items-center justify-between text-xs font-bold text-purple-300 mb-3">
               <span className="flex items-center gap-1.5">
                 <Clock className="w-4 h-4 text-purple-400" />
                 Thời gian còn lại:
@@ -141,7 +159,7 @@ export const HostLiveGame: React.FC<HostLiveGameProps> = ({
                   <div
                     key={idx}
                     className={`p-3.5 rounded-2xl border text-xs font-bold flex items-center justify-between transition-all ${
-                      isCorrect
+                      isCorrect && isRevealed
                         ? 'bg-emerald-500/30 border-emerald-400 text-emerald-100 shadow-md ring-2 ring-emerald-500/50'
                         : colors[idx % colors.length]
                     }`}
@@ -156,7 +174,7 @@ export const HostLiveGame: React.FC<HostLiveGameProps> = ({
                     {isCorrect && (
                       <span className="flex items-center gap-1 text-[11px] font-black text-emerald-300 bg-emerald-950/80 px-2 py-0.5 rounded-full">
                         <CheckCircle className="w-3 h-3" />
-                        Đúng
+                        Đáp án đúng
                       </span>
                     )}
                   </div>
@@ -164,7 +182,7 @@ export const HostLiveGame: React.FC<HostLiveGameProps> = ({
               })}
             </div>
 
-            {explanation && (
+            {explanation && isRevealed && (
               <div className="mt-4 p-3 rounded-xl bg-purple-950/40 border border-purple-800/40 text-xs text-purple-300">
                 💡 <span className="font-bold text-purple-200">Giải thích:</span> {explanation}
               </div>
@@ -176,7 +194,7 @@ export const HostLiveGame: React.FC<HostLiveGameProps> = ({
             <div className="flex items-center gap-2 text-xs font-bold text-purple-200">
               <Award className="w-4 h-4 text-purple-400" />
               <span>
-                Tiến độ trả lời: <span className="text-white font-black">{answeredCount}</span> / {totalPlayers} học sinh
+                Tiến độ nộp bài: <span className="text-white font-black">{answeredCount}</span> / {totalPlayers} học sinh
               </span>
             </div>
 
@@ -195,7 +213,7 @@ export const HostLiveGame: React.FC<HostLiveGameProps> = ({
             <div className="flex items-center justify-between pb-4 border-b border-[#2b1859] mb-4">
               <div className="flex items-center gap-2 font-black text-white text-base">
                 <Trophy className="w-5 h-5 text-amber-400" />
-                <span>BẢNG XẾP HẠNG TRỰC TIẾP</span>
+                <span>BẢNG XẾP HẠNG</span>
               </div>
               <span className="text-xs font-bold text-purple-400">
                 {leaderboard.length} người chơi
@@ -233,7 +251,7 @@ export const HostLiveGame: React.FC<HostLiveGameProps> = ({
                         </p>
                         {player.streak > 1 && (
                           <span className="inline-flex items-center gap-1 text-[10px] text-amber-400 font-bold">
-                            <Flame className="w-3 h-3 fill-current text-amber-500" />
+                            <Flame className="w-3.5 h-3.5 fill-current text-amber-500" />
                             Streak x{player.streak}
                           </span>
                         )}

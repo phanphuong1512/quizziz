@@ -282,9 +282,15 @@ function simulateBotAnswers(room, questionIndex) {
         timeTaken: answerDelaySec,
       });
 
-      // Update room leaderboard
-      io.to(`room:${room.pin}`).emit('room:leaderboard_update', {
-        leaderboard: getLeaderboard(room),
+      room.pendingFeedback[bot.id] = {
+        isCorrect,
+        pointsEarned: points,
+        speedBonus,
+        streakBonus,
+      };
+
+      // Only broadcast answer count progress (keep scores & correct/incorrect secret during question!)
+      io.to(`room:${room.pin}`).emit('room:answered_progress', {
         answeredCount: Object.values(room.players).filter((p) => p.isCurrentAnswered).length,
         totalPlayers: Object.values(room.players).length,
       });
@@ -296,14 +302,184 @@ function simulateBotAnswers(room, questionIndex) {
 }
 
 function checkAllAnswered(room) {
+  if (room.status !== 'in_progress') return;
   const players = Object.values(room.players);
   if (players.length === 0) return;
   const allAnswered = players.every((p) => p.isCurrentAnswered);
   if (allAnswered) {
-    // Notify host that all players finished this question
-    io.to(room.hostSocketId).emit('host:all_players_answered', {
-      questionIndex: room.currentQuestionIndex,
+    // All students answered -> reveal simultaneously after short delay
+    setTimeout(() => {
+      if (room.status === 'in_progress') {
+        revealQuestion(room);
+      }
+    }, 500);
+  }
+}
+
+function revealQuestion(room) {
+  if (room.status !== 'in_progress') return;
+  room.status = 'revealing';
+
+  if (room.questionTimer) {
+    clearTimeout(room.questionTimer);
+    room.questionTimer = null;
+  }
+
+  const q = room.quiz.questions[room.currentQuestionIndex];
+  if (!q) return;
+
+  const duration = q.timeLimit || 20;
+
+  // Handle players who did not answer before time ran out
+  Object.values(room.players).forEach((player) => {
+    if (!player.isCurrentAnswered) {
+      player.isCurrentAnswered = true;
+      player.streak = 0;
+      player.answers.push({
+        questionIndex: room.currentQuestionIndex,
+        selectedOption: -1,
+        isCorrect: false,
+        points: 0,
+        timeTaken: duration,
+      });
+      room.pendingFeedback[player.id] = {
+        isCorrect: false,
+        pointsEarned: 0,
+        speedBonus: 0,
+        streakBonus: 0,
+        timedOut: true,
+      };
+    }
+  });
+
+  const leaderboard = getLeaderboard(room);
+
+  // Send individualized feedback to each student SIMULTANEOUSLY
+  Object.values(room.players).forEach((player) => {
+    if (player.isBot) return;
+    const fb = room.pendingFeedback[player.id] || { isCorrect: false, pointsEarned: 0 };
+    const playerRank = leaderboard.findIndex((p) => p.id === player.id) + 1;
+
+    io.to(player.id).emit('player:answer_feedback', {
+      isCorrect: fb.isCorrect,
+      pointsEarned: fb.pointsEarned,
+      speedBonus: fb.speedBonus || 0,
+      streakBonus: fb.streakBonus || 0,
+      streak: player.streak,
+      correctIndex: q.correctIndex,
+      explanation: q.explanation || '',
+      currentScore: player.score,
+      currentRank: playerRank,
+      timedOut: !!fb.timedOut,
     });
+  });
+
+  // Broadcast simultaneous question reveal and updated leaderboard to all in room
+  io.to(`room:${room.pin}`).emit('game:question_revealed', {
+    questionIndex: room.currentQuestionIndex,
+    correctIndex: q.correctIndex,
+    explanation: q.explanation || '',
+    leaderboard,
+    autoNextSeconds: 4,
+  });
+
+  // Automatically advance to the next question after 4.5 seconds
+  if (room.autoNextTimer) clearTimeout(room.autoNextTimer);
+  room.autoNextTimer = setTimeout(() => {
+    if (room.status === 'revealing') {
+      advanceNext(room);
+    }
+  }, 4500);
+}
+
+function startQuestion(room, questionIndex) {
+  if (questionIndex >= room.quiz.questions.length) {
+    endGame(room);
+    return;
+  }
+
+  room.status = 'in_progress';
+  room.currentQuestionIndex = questionIndex;
+  room.questionStartTime = Date.now();
+  room.pendingFeedback = {};
+
+  if (room.autoNextTimer) {
+    clearTimeout(room.autoNextTimer);
+    room.autoNextTimer = null;
+  }
+  if (room.questionTimer) {
+    clearTimeout(room.questionTimer);
+    room.questionTimer = null;
+  }
+
+  // Reset currentAnswered flag for all players
+  Object.values(room.players).forEach((p) => {
+    p.isCurrentAnswered = false;
+  });
+
+  const q = room.quiz.questions[questionIndex];
+  const duration = q.timeLimit || 20;
+
+  // Send question without revealing correctIndex to players!
+  io.to(`room:${room.pin}`).emit('game:new_question', {
+    questionIndex,
+    totalQuestions: room.quiz.questions.length,
+    question: q.question,
+    options: q.options,
+    duration,
+    quizTitle: room.quiz.title,
+  });
+
+  // Send host live question info including correct answer
+  io.to(room.hostSocketId).emit('host:question_info', {
+    questionIndex,
+    correctIndex: q.correctIndex,
+    explanation: q.explanation || '',
+  });
+
+  // Send initial 0 answered progress
+  io.to(`room:${room.pin}`).emit('room:answered_progress', {
+    answeredCount: 0,
+    totalPlayers: Object.values(room.players).length,
+  });
+
+  // Simulate bots answering
+  simulateBotAnswers(room, questionIndex);
+
+  // Auto reveal when question duration expires
+  room.questionTimer = setTimeout(() => {
+    if (room.status === 'in_progress' && room.currentQuestionIndex === questionIndex) {
+      revealQuestion(room);
+    }
+  }, duration * 1000);
+}
+
+function endGame(room) {
+  if (room.questionTimer) clearTimeout(room.questionTimer);
+  if (room.autoNextTimer) clearTimeout(room.autoNextTimer);
+  room.status = 'finished';
+
+  const stats = computeGameStats(room);
+  console.log(`[Game] Ended room ${room.pin}. Leaderboard:`, stats.finalLeaderboard.map((p) => `${p.name}: ${p.score}`));
+
+  io.to(`room:${room.pin}`).emit('game:ended', stats);
+}
+
+function advanceNext(room) {
+  if (room.autoNextTimer) {
+    clearTimeout(room.autoNextTimer);
+    room.autoNextTimer = null;
+  }
+  if (room.questionTimer) {
+    clearTimeout(room.questionTimer);
+    room.questionTimer = null;
+  }
+
+  const nextIdx = room.currentQuestionIndex + 1;
+  if (nextIdx < room.quiz.questions.length) {
+    startQuestion(room, nextIdx);
+  } else {
+    endGame(room);
   }
 }
 
@@ -328,6 +504,7 @@ io.on('connection', (socket) => {
       currentQuestionIndex: -1,
       questionStartTime: null,
       players: {},
+      pendingFeedback: {},
     };
 
     rooms.set(pin, room);
@@ -474,56 +651,7 @@ io.on('connection', (socket) => {
     }, 1000);
   });
 
-  function startQuestion(room, questionIndex) {
-    if (questionIndex >= room.quiz.questions.length) {
-      endGame(room);
-      return;
-    }
 
-    room.status = 'in_progress';
-    room.currentQuestionIndex = questionIndex;
-    room.questionStartTime = Date.now();
-
-    // Reset currentAnswered flag for all players
-    Object.values(room.players).forEach((p) => {
-      p.isCurrentAnswered = false;
-    });
-
-    const q = room.quiz.questions[questionIndex];
-    const duration = q.timeLimit || 20;
-
-    // Send question without revealing correctIndex to players!
-    io.to(`room:${room.pin}`).emit('game:new_question', {
-      questionIndex,
-      totalQuestions: room.quiz.questions.length,
-      question: q.question,
-      options: q.options,
-      duration,
-      quizTitle: room.quiz.title,
-    });
-
-    // Send host live question info including correct answer
-    io.to(room.hostSocketId).emit('host:question_info', {
-      questionIndex,
-      correctIndex: q.correctIndex,
-      explanation: q.explanation || '',
-    });
-
-    // Simulate bots answering
-    simulateBotAnswers(room, questionIndex);
-
-    // Auto advance timer
-    if (room.questionTimer) clearTimeout(room.questionTimer);
-    room.questionTimer = setTimeout(() => {
-      // Time up for question
-      if (room.status === 'in_progress' && room.currentQuestionIndex === questionIndex) {
-        io.to(`room:${room.pin}`).emit('game:question_time_up', {
-          correctIndex: q.correctIndex,
-          explanation: q.explanation,
-        });
-      }
-    }, (duration + 1) * 1000);
-  }
 
   // PLAYER: Submit Answer
   socket.on('player:submit_answer', ({ pin, questionIndex, selectedOption, timeRemaining }) => {
@@ -557,25 +685,21 @@ io.on('connection', (socket) => {
       timeTaken,
     });
 
-    // Send personal feedback to student
-    const leaderboard = getLeaderboard(room);
-    const playerRank = leaderboard.findIndex((p) => p.id === player.id) + 1;
-
-    socket.emit('player:answer_feedback', {
+    // Store feedback to be revealed simultaneously when time ends
+    room.pendingFeedback[socket.id] = {
       isCorrect,
       pointsEarned: points,
       speedBonus,
       streakBonus,
-      streak: player.streak,
-      correctIndex: q.correctIndex,
-      explanation: q.explanation || '',
-      currentScore: player.score,
-      currentRank: playerRank,
+    };
+
+    // Acknowledge answer recorded (DO NOT reveal right/wrong yet to prevent copying!)
+    socket.emit('player:answer_recorded', {
+      selectedOption,
     });
 
-    // Send updated leaderboard to host & all players
-    io.to(`room:${pin}`).emit('room:leaderboard_update', {
-      leaderboard,
+    // Send updated answered progress only (keep scores secret!)
+    io.to(`room:${pin}`).emit('room:answered_progress', {
       answeredCount: Object.values(room.players).filter((p) => p.isCurrentAnswered).length,
       totalPlayers: Object.values(room.players).length,
     });
@@ -583,18 +707,11 @@ io.on('connection', (socket) => {
     checkAllAnswered(room);
   });
 
-  // HOST: Next Question
+  // HOST: Next Question (Manual skip)
   socket.on('host:next_question', ({ pin }) => {
     const room = rooms.get(pin);
     if (!room) return;
-
-    if (room.questionTimer) clearTimeout(room.questionTimer);
-    const nextIdx = room.currentQuestionIndex + 1;
-    if (nextIdx < room.quiz.questions.length) {
-      startQuestion(room, nextIdx);
-    } else {
-      endGame(room);
-    }
+    advanceNext(room);
   });
 
   // HOST: End Game early or finished
@@ -604,15 +721,7 @@ io.on('connection', (socket) => {
     endGame(room);
   });
 
-  function endGame(room) {
-    if (room.questionTimer) clearTimeout(room.questionTimer);
-    room.status = 'finished';
 
-    const stats = computeGameStats(room);
-    console.log(`[Game] Ended room ${room.pin}. Leaderboard:`, stats.finalLeaderboard.map((p) => `${p.name}: ${p.score}`));
-
-    io.to(`room:${room.pin}`).emit('game:ended', stats);
-  }
 
   // Handle Disconnect
   socket.on('disconnect', () => {

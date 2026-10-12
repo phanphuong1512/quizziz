@@ -50,6 +50,7 @@ export interface AnswerFeedback {
   explanation: string;
   currentScore: number;
   currentRank: number;
+  timedOut?: boolean;
 }
 
 export interface QuestionBreakdown {

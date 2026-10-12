@@ -55,6 +55,7 @@ export const App: React.FC = () => {
   const [studentScore, setStudentScore] = useState<number>(0);
   const [studentRank, setStudentRank] = useState<number>(1);
   const [studentStreak, setStudentStreak] = useState<number>(0);
+  const [isRevealed, setIsRevealed] = useState<boolean>(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [isJoining, setIsJoining] = useState<boolean>(false);
 
@@ -128,6 +129,7 @@ export const App: React.FC = () => {
       quizTitle: string;
     }) => {
       setCountdown(null);
+      setIsRevealed(false);
       setCurrentQuestionIndex(data.questionIndex);
       setTotalQuestions(data.totalQuestions);
       setCurrentQuestion(data.question);
@@ -149,6 +151,34 @@ export const App: React.FC = () => {
     socket.on('host:question_info', (data: { questionIndex: number; correctIndex: number; explanation: string }) => {
       setHostCorrectIndex(data.correctIndex);
       setHostExplanation(data.explanation);
+    });
+
+    // ANSWERED PROGRESS (count only during question)
+    socket.on('room:answered_progress', (data: { answeredCount: number; totalPlayers: number }) => {
+      setAnsweredCount(data.answeredCount);
+    });
+
+    // QUESTION REVEALED (simultaneous reveal when time expires)
+    socket.on('game:question_revealed', (data: {
+      questionIndex: number;
+      correctIndex: number;
+      explanation: string;
+      leaderboard: LeaderboardEntry[];
+      autoNextSeconds: number;
+    }) => {
+      setIsRevealed(true);
+      setHostCorrectIndex(data.correctIndex);
+      setHostExplanation(data.explanation);
+      setLeaderboard(data.leaderboard);
+
+      if (myPlayerId) {
+        const myEntry = data.leaderboard.find((p) => p.id === myPlayerId);
+        if (myEntry) {
+          setStudentScore(myEntry.score);
+          setStudentRank(myEntry.rank);
+          setStudentStreak(myEntry.streak);
+        }
+      }
     });
 
     // LEADERBOARD UPDATE
@@ -354,6 +384,7 @@ export const App: React.FC = () => {
             leaderboard={leaderboard}
             answeredCount={answeredCount}
             totalPlayers={players.length}
+            isRevealed={isRevealed}
             onNextQuestion={handleNextQuestion}
             onEndGame={handleEndGame}
           />

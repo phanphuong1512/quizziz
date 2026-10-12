@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Flame, Clock, Award, CheckCircle2, XCircle } from 'lucide-react';
+import { Flame, Clock, Award, CheckCircle2, XCircle, Lock } from 'lucide-react';
 import type { AnswerFeedback } from '../types';
 import { sounds } from '../utils/sound';
 
@@ -50,11 +50,13 @@ export const StudentGame: React.FC<StudentGameProps> = ({
   const [timeLeft, setTimeLeft] = useState(duration);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [cheerQuote, setCheerQuote] = useState('');
+  const [revealCountdown, setRevealCountdown] = useState(4);
 
   // Reset timer on new question
   useEffect(() => {
     setTimeLeft(duration);
     setSelectedOption(null);
+    setRevealCountdown(4);
 
     if (duration > 0) {
       const interval = setInterval(() => {
@@ -71,7 +73,7 @@ export const StudentGame: React.FC<StudentGameProps> = ({
     }
   }, [questionIndex, duration]);
 
-  // Set random cheer quote when correct feedback arrives
+  // Set random cheer quote & play audio when synchronized feedback arrives
   useEffect(() => {
     if (feedback) {
       if (feedback.isCorrect) {
@@ -83,10 +85,18 @@ export const StudentGame: React.FC<StudentGameProps> = ({
       } else {
         sounds.playIncorrect();
       }
+
+      // Countdown for auto next question
+      setRevealCountdown(4);
+      const countdownTimer = setInterval(() => {
+        setRevealCountdown((prev) => (prev > 1 ? prev - 1 : 1));
+      }, 1000);
+
+      return () => clearInterval(countdownTimer);
     }
   }, [feedback]);
 
-  // Sound for countdown
+  // Sound for countdown 3, 2, 1
   useEffect(() => {
     if (countdown !== null) {
       sounds.playCountdownTick(countdown);
@@ -144,45 +154,55 @@ export const StudentGame: React.FC<StudentGameProps> = ({
     );
   }
 
-  // 3. INSTANT FEEDBACK OVERLAY (QUIZIZZ SIGNATURE STYLE)
+  // 3. SYNCHRONIZED REVEAL OVERLAY (APPEARS ONLY AFTER TIME RUNS OUT / REVEAL)
   if (feedback !== null) {
     return (
-      <div className="fixed inset-0 z-40 bg-[#0b051b] flex flex-col items-center justify-between p-6 overflow-y-auto">
-        <div className="w-full max-w-md my-auto space-y-6 text-center">
+      <div className="fixed inset-0 z-50 bg-[#0b051b]/95 backdrop-blur-md flex flex-col items-center justify-between p-4 sm:p-6 overflow-y-auto">
+        <div className="w-full max-w-md my-auto space-y-5 text-center">
+          {/* Auto Next Countdown Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-purple-600/40 border border-purple-400/30 text-purple-200 text-xs font-black animate-pulse">
+            <Clock className="w-3.5 h-3.5 text-amber-300" />
+            <span>Tự động chuyển câu tiếp theo sau {revealCountdown}s...</span>
+          </div>
+
           {/* Result Card */}
           <div
-            className={`p-8 rounded-3xl border-4 shadow-2xl relative overflow-hidden ${
+            className={`p-6 sm:p-8 rounded-3xl border-4 shadow-2xl relative overflow-hidden ${
               feedback.isCorrect
                 ? 'bg-gradient-to-b from-emerald-900/90 to-emerald-950 border-emerald-400 shadow-emerald-500/30'
                 : 'bg-gradient-to-b from-rose-950/90 to-red-950 border-rose-500 shadow-red-500/30'
             }`}
           >
             {/* Icon */}
-            <div className="mb-4">
+            <div className="mb-3">
               {feedback.isCorrect ? (
-                <div className="w-20 h-20 rounded-full bg-emerald-500/30 border-2 border-emerald-400 flex items-center justify-center mx-auto text-emerald-300 animate-bounce">
-                  <CheckCircle2 className="w-12 h-12" />
+                <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-emerald-500/30 border-2 border-emerald-400 flex items-center justify-center mx-auto text-emerald-300 animate-bounce">
+                  <CheckCircle2 className="w-10 h-10 sm:w-12 sm:h-12" />
                 </div>
               ) : (
-                <div className="w-20 h-20 rounded-full bg-red-500/30 border-2 border-red-400 flex items-center justify-center mx-auto text-red-300">
-                  <XCircle className="w-12 h-12" />
+                <div className="w-18 h-18 sm:w-20 sm:h-20 rounded-full bg-red-500/30 border-2 border-red-400 flex items-center justify-center mx-auto text-red-300">
+                  <XCircle className="w-10 h-10 sm:w-12 sm:h-12" />
                 </div>
               )}
             </div>
 
             {/* Title / Cheer */}
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">
-              {feedback.isCorrect ? cheerQuote : 'TIẾC QUÁ, SAI RỒI!'}
+              {feedback.isCorrect
+                ? cheerQuote
+                : feedback.timedOut
+                ? 'HẾT THỜI GIAN!'
+                : 'TIẾC QUÁ, SAI RỒI!'}
             </h2>
 
             {/* Points breakdown if correct */}
             {feedback.isCorrect ? (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div className="text-4xl font-black text-yellow-300 font-mono tracking-tight">
                   +{feedback.pointsEarned} ĐIỂM
                 </div>
 
-                <div className="flex items-center justify-center gap-3 text-xs font-bold text-emerald-200">
+                <div className="flex items-center justify-center gap-2.5 text-xs font-bold text-emerald-200">
                   <span>Cơ bản: +500</span>
                   <span>•</span>
                   <span>Tốc độ: +{feedback.speedBonus}</span>
@@ -202,7 +222,7 @@ export const StudentGame: React.FC<StudentGameProps> = ({
                 )}
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <p className="text-xs text-rose-200">
                   Đáp án chính xác là:
                 </p>
@@ -230,89 +250,106 @@ export const StudentGame: React.FC<StudentGameProps> = ({
               #{feedback.currentRank} • {feedback.currentScore.toLocaleString()} điểm
             </div>
           </div>
-
-          <p className="text-xs text-purple-400/80 animate-pulse">
-            Đang chờ giáo viên chuyển sang câu hỏi tiếp theo...
-          </p>
         </div>
       </div>
     );
   }
 
-  // 4. ACTIVE QUESTION GAMEPLAY SCREEN
+  // 4. ACTIVE QUESTION GAMEPLAY SCREEN (WITH TOP PROGRESS BAR & SECRET LOCKED SELECTION)
   return (
-    <div className="min-h-[calc(100vh-70px)] max-w-4xl mx-auto px-4 py-4 flex flex-col justify-between">
-      {/* Top Status Bar */}
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="px-3 py-1 rounded-xl bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-black">
-              CÂU {questionIndex + 1} / {totalQuestions}
-            </span>
-            {streak > 1 && (
-              <span className="flex items-center gap-1 text-xs font-black text-amber-400 bg-amber-500/20 px-2.5 py-1 rounded-xl border border-amber-500/40">
-                <Flame className="w-3.5 h-3.5 fill-current text-amber-400" />
-                x{streak}
-              </span>
-            )}
-          </div>
+    <div className="min-h-[calc(100vh-70px)] max-w-4xl mx-auto px-4 pt-6 pb-6 flex flex-col justify-between relative">
+      {/* FULL-WIDTH FIXED HORIZONTAL COUNTDOWN BAR AT TOP */}
+      <div className="fixed top-0 left-0 right-0 h-2 sm:h-2.5 bg-[#170e33] z-50 overflow-hidden shadow-md">
+        <div
+          className={`h-full transition-all duration-300 ${
+            timerPercent > 45 ? 'bg-emerald-400' : timerPercent > 20 ? 'bg-amber-400' : 'bg-rose-500'
+          }`}
+          style={{ width: `${timerPercent}%` }}
+        />
+      </div>
 
-          <div className="text-right flex items-center gap-3">
-            <div className="text-xs font-bold text-purple-300">
-              Hạng #{currentRank}
-            </div>
-            <div className="text-sm font-black text-white font-mono">
-              {currentScore.toLocaleString()} đ
-            </div>
-          </div>
+      {/* Top Status Bar */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <span className="px-3 py-1 rounded-xl bg-purple-600/30 border border-purple-500/40 text-purple-300 text-xs font-black">
+            CÂU {questionIndex + 1} / {totalQuestions}
+          </span>
+          {streak > 1 && (
+            <span className="flex items-center gap-1 text-xs font-black text-amber-400 bg-amber-500/20 px-2.5 py-1 rounded-xl border border-amber-500/40">
+              <Flame className="w-3.5 h-3.5 fill-current text-amber-400" />
+              x{streak}
+            </span>
+          )}
         </div>
 
-        {/* Shrinking Countdown Bar */}
-        <div className="w-full h-2.5 rounded-full bg-[#1b103e] overflow-hidden border border-[#331c63]">
-          <div
-            className={`h-full transition-all duration-1000 rounded-full ${
-              timerPercent > 40 ? 'bg-emerald-400' : timerPercent > 20 ? 'bg-amber-400' : 'bg-red-500'
-            }`}
-            style={{ width: `${timerPercent}%` }}
-          />
+        <div className="flex items-center gap-3 text-right">
+          <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300 bg-[#1b103e] px-3 py-1 rounded-xl border border-[#3b216d]">
+            <Clock className="w-3.5 h-3.5 text-purple-400" />
+            <span className={`font-mono font-black ${timeLeft <= 5 ? 'text-rose-400 animate-pulse' : 'text-white'}`}>
+              {timeLeft}s
+            </span>
+          </div>
+
+          <div className="text-sm font-black text-white font-mono hidden sm:block">
+            #{currentRank} • {currentScore.toLocaleString()} đ
+          </div>
         </div>
       </div>
 
       {/* Question Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#170e33] border-2 border-[#381f6e] shadow-2xl my-auto text-center">
-        <div className="flex items-center justify-center gap-2 text-xs font-bold text-purple-400 mb-3">
-          <Clock className="w-3.5 h-3.5" />
-          <span>Thời gian còn: {timeLeft}s</span>
-        </div>
+      <div className="p-6 sm:p-8 rounded-3xl bg-[#170e33] border-2 border-[#381f6e] shadow-2xl my-auto text-center space-y-3">
         <h2 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-white leading-relaxed">
           {question}
         </h2>
+
+        {/* Secret Locked-in Badge when option has been selected (NO PEAKING / NO SPOILER) */}
+        {selectedOption !== null && (
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-purple-600/30 border border-purple-500/50 text-purple-200 text-xs font-bold animate-pulse">
+            <Lock className="w-3.5 h-3.5 text-amber-400" />
+            <span>Đã ghi nhận đáp án! Giữ bí mật và chờ hết giờ nhé 🤫</span>
+          </div>
+        )}
       </div>
 
       {/* 4 Quizizz 3D Answer Buttons */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-4">
         {[
           { color: 'bg-[#e21b3c] hover:bg-[#c91835] border-b-4 border-[#8e1025]', icon: '▲', label: 'A' },
           { color: 'bg-[#1368ce] hover:bg-[#0f55aa] border-b-4 border-[#0b3c78]', icon: '◆', label: 'B' },
           { color: 'bg-[#d89e00] hover:bg-[#b88600] border-b-4 border-[#825f00]', icon: '●', label: 'C' },
           { color: 'bg-[#26890c] hover:bg-[#1f7009] border-b-4 border-[#144906]', icon: '■', label: 'D' },
-        ].map((btn, idx) => (
-          <button
-            key={idx}
-            onClick={() => handleSelectOption(idx)}
-            disabled={selectedOption !== null || timeLeft <= 0}
-            className={`quizizz-btn-3d p-4 sm:p-5 rounded-2xl text-white font-extrabold text-sm sm:text-base flex items-center justify-between text-left shadow-lg transition-transform ${btn.color} ${
-              selectedOption === idx ? 'ring-4 ring-white' : ''
-            } disabled:opacity-70`}
-          >
-            <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-xl bg-black/20 flex items-center justify-center text-sm font-black">
-                {btn.icon}
-              </span>
-              <span className="leading-snug">{options[idx]}</span>
-            </div>
-          </button>
-        ))}
+        ].map((btn, idx) => {
+          const isSelected = selectedOption === idx;
+          const isAnySelected = selectedOption !== null;
+
+          return (
+            <button
+              key={idx}
+              onClick={() => handleSelectOption(idx)}
+              disabled={isAnySelected || timeLeft <= 0}
+              className={`quizizz-btn-3d p-4 sm:p-5 rounded-2xl text-white font-extrabold text-sm sm:text-base flex items-center justify-between text-left shadow-lg transition-all ${
+                isSelected
+                  ? `${btn.color} ring-4 ring-white scale-[1.02] shadow-2xl`
+                  : isAnySelected
+                  ? `${btn.color} opacity-40 cursor-not-allowed`
+                  : btn.color
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-xl bg-black/20 flex items-center justify-center text-sm font-black">
+                  {btn.icon}
+                </span>
+                <span className="leading-snug">{options[idx]}</span>
+              </div>
+
+              {isSelected && (
+                <span className="text-xs font-black bg-white/20 px-2.5 py-1 rounded-xl">
+                  ✓ Đã chọn
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
